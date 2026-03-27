@@ -1,0 +1,1981 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TropRapide · Admin</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --yellow: #f5c800;
+        --yellow-dark: #d4aa00;
+        --black: #0a0a0a;
+        --dark: #111;
+        --card: #1a1a1a;
+        --border: #2a2a2a;
+        --text: #e8e8e8;
+        --muted: #888;
+        --green: #22c55e;
+        --red: #ef4444;
+        --blue: #3b82f6;
+        --orange: #f97316;
+        --purple: #a855f7;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--black);
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* CONFIG SCREEN */
+      .config-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+        background: var(--dark);
+      }
+      .config-logo {
+        font-family: "Syne", sans-serif;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--yellow);
+        margin-bottom: 4px;
+      }
+      .config-sub {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-bottom: 32px;
+        text-align: center;
+      }
+      .config-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px;
+        width: 100%;
+        max-width: 480px;
+      }
+      .config-title {
+        font-family: "Syne", sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: var(--yellow);
+      }
+      .config-desc {
+        font-size: 0.82rem;
+        color: var(--muted);
+        margin-bottom: 20px;
+        line-height: 1.6;
+      }
+      .config-step {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding: 14px;
+        background: var(--dark);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+      .config-num {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--yellow);
+        color: var(--black);
+        font-weight: 800;
+        font-size: 0.82rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .config-step-text {
+        font-size: 0.83rem;
+        line-height: 1.6;
+        color: var(--text);
+      }
+      .config-step-text a {
+        color: var(--yellow);
+        text-decoration: none;
+      }
+      .field {
+        margin-bottom: 12px;
+      }
+      .field label {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 5px;
+      }
+      .field input {
+        width: 100%;
+        background: var(--black);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        font-family: "DM Sans", sans-serif;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .field input:focus {
+        border-color: var(--yellow);
+      }
+      .btn-connect {
+        width: 100%;
+        padding: 13px;
+        background: var(--yellow);
+        color: var(--black);
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        font-family: "Syne", sans-serif;
+        cursor: pointer;
+        margin-top: 6px;
+        transition: all 0.15s;
+      }
+      .btn-connect:hover {
+        background: var(--yellow-dark);
+      }
+      .firebase-hint {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 10px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      /* MAIN APP */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 28px;
+        border-bottom: 1px solid var(--border);
+        background: var(--dark);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--yellow);
+      }
+      .logo-dot {
+        width: 9px;
+        height: 9px;
+        background: var(--yellow);
+        border-radius: 50%;
+        animation: pdot 1.5s infinite;
+      }
+      @keyframes pdot {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.4);
+          opacity: 0.6;
+        }
+      }
+      .live-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: var(--green);
+        padding: 5px 12px;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+      .live-dot {
+        width: 7px;
+        height: 7px;
+        background: var(--green);
+        border-radius: 50%;
+        animation: pdot 1s infinite;
+      }
+      .hbtn {
+        background: var(--card);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        padding: 7px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        transition: all 0.2s;
+      }
+      .hbtn:hover {
+        border-color: var(--yellow);
+        color: var(--yellow);
+      }
+      .hbtn.active {
+        background: rgba(245, 200, 0, 0.1);
+        border-color: var(--yellow);
+        color: var(--yellow);
+      }
+      .hactions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        height: calc(100vh - 61px);
+      }
+      .main {
+        padding: 22px 26px;
+        overflow-y: auto;
+      }
+      .sidebar {
+        background: var(--dark);
+        border-left: 1px solid var(--border);
+        padding: 20px 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* TYPE BTNS */
+      .type-row {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      .type-btn {
+        padding: 6px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.79rem;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .type-btn.active {
+        border-color: var(--yellow);
+        color: var(--black);
+        background: var(--yellow);
+      }
+      .type-btn[data-t="colis"].active {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #fff;
+      }
+      .type-btn[data-t="courses"].active {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+      }
+      .type-btn[data-t="medicaments"].active {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+      .type-btn[data-t="documents"].active {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+      }
+      .type-btn[data-t="entreprise"].active {
+        background: var(--purple);
+        border-color: var(--purple);
+        color: #fff;
+      }
+
+      /* FORM */
+      .order-form {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 20px;
+      }
+      .form-title {
+        font-family: "Syne", sans-serif;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--yellow);
+        margin-bottom: 12px;
+      }
+      .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .fg label {
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .fg input,
+      .fg select {
+        background: var(--dark);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        padding: 8px 11px;
+        font-size: 0.83rem;
+        font-family: "DM Sans", sans-serif;
+        outline: none;
+        -webkit-appearance: none;
+      }
+      .fg input:focus,
+      .fg select:focus {
+        border-color: var(--yellow);
+      }
+      .fg select option {
+        background: var(--dark);
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+        margin-bottom: 9px;
+      }
+      .full {
+        grid-column: 1/-1;
+      }
+      .btn-create {
+        width: 100%;
+        padding: 11px;
+        background: var(--yellow);
+        color: var(--black);
+        border: none;
+        border-radius: 9px;
+        font-size: 0.88rem;
+        font-weight: 800;
+        cursor: pointer;
+        font-family: "Syne", sans-serif;
+        transition: all 0.15s;
+        margin-top: 4px;
+      }
+      .btn-create:hover {
+        background: var(--yellow-dark);
+      }
+
+      /* STATS */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+      }
+      .stat-card.y::before {
+        background: var(--yellow);
+      }
+      .stat-card.g::before {
+        background: var(--green);
+      }
+      .stat-card.b::before {
+        background: var(--blue);
+      }
+      .stat-card.o::before {
+        background: var(--orange);
+      }
+      .stat-lbl {
+        font-size: 0.7rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 5px;
+      }
+      .stat-val {
+        font-family: "Syne", sans-serif;
+        font-size: 1.7rem;
+        font-weight: 800;
+      }
+      .stat-val.y {
+        color: var(--yellow);
+      }
+      .stat-val.g {
+        color: var(--green);
+      }
+      .stat-val.b {
+        color: var(--blue);
+      }
+      .stat-val.o {
+        color: var(--orange);
+      }
+
+      /* TYPE STATS */
+      .type-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+      .ts {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 9px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .ts:hover {
+        border-color: #444;
+      }
+      .ts.af {
+        border-color: var(--yellow);
+      }
+      .ts-ico {
+        font-size: 1.1rem;
+        margin-bottom: 1px;
+      }
+      .ts-n {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 1rem;
+      }
+      .ts-l {
+        font-size: 0.65rem;
+        color: var(--muted);
+      }
+
+      /* ORDERS */
+      .tabs {
+        display: flex;
+        gap: 7px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .tab {
+        padding: 6px 12px;
+        border-radius: 7px;
+        cursor: pointer;
+        font-size: 0.77rem;
+        font-weight: 500;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        transition: all 0.2s;
+      }
+      .tab.active {
+        background: var(--yellow);
+        color: var(--black);
+        border-color: var(--yellow);
+        font-weight: 700;
+      }
+      .order-list {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .oc {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        padding: 14px 16px;
+        transition: transform 0.15s;
+      }
+      .oc:hover {
+        transform: translateX(2px);
+        border-color: #444;
+      }
+      .oc.new-a {
+        border-color: var(--yellow);
+        animation:
+          sin 0.4s ease-out,
+          gb 2s ease 3;
+      }
+      @keyframes sin {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes gb {
+        0%,
+        100% {
+          border-color: var(--yellow);
+        }
+        50% {
+          border-color: rgba(245, 200, 0, 0.2);
+        }
+      }
+      .oc.urg {
+        border-left: 3px solid var(--red);
+      }
+      .ot {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 7px;
+      }
+      .oid {
+        font-family: "Syne", sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--yellow);
+      }
+      .otime {
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
+      .orest {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+      }
+      .oitems {
+        font-size: 0.78rem;
+        color: var(--muted);
+        margin-bottom: 7px;
+      }
+      .ofooter {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .oprice {
+        font-family: "Syne", sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+      .sb {
+        padding: 3px 9px;
+        border-radius: 100px;
+        font-size: 0.68rem;
+        font-weight: 600;
+      }
+      .sb.nouvelle {
+        background: rgba(245, 200, 0, 0.15);
+        color: var(--yellow);
+        border: 1px solid rgba(245, 200, 0, 0.3);
+      }
+      .sb.acceptee {
+        background: rgba(249, 115, 22, 0.15);
+        color: var(--orange);
+        border: 1px solid rgba(249, 115, 22, 0.3);
+      }
+      .sb.en-route {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--blue);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .sb.livree {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--green);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      .tbadge {
+        padding: 2px 7px;
+        border-radius: 5px;
+        font-size: 0.65rem;
+        font-weight: 700;
+      }
+      .tbadge.repas {
+        background: rgba(245, 200, 0, 0.12);
+        color: var(--yellow);
+      }
+      .tbadge.colis {
+        background: rgba(249, 115, 22, 0.12);
+        color: var(--orange);
+      }
+      .tbadge.courses {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green);
+      }
+      .tbadge.medicaments {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--red);
+      }
+      .tbadge.documents {
+        background: rgba(59, 130, 246, 0.12);
+        color: var(--blue);
+      }
+      .tbadge.entreprise {
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--purple);
+      }
+      .abts {
+        display: flex;
+        gap: 7px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 6px 13px;
+        border-radius: 7px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .bp {
+        background: var(--yellow);
+        color: var(--black);
+      }
+      .bp:hover {
+        background: var(--yellow-dark);
+      }
+      .bwa {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+      }
+      .bd {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      /* SIDEBAR */
+      .stitle {
+        font-family: "Syne", sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.9px;
+        margin-bottom: 10px;
+      }
+      .share-box {
+        background: rgba(245, 200, 0, 0.06);
+        border: 1px solid rgba(245, 200, 0, 0.2);
+        border-radius: 11px;
+        padding: 13px;
+      }
+      .share-title {
+        font-family: "Syne", sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--yellow);
+        margin-bottom: 9px;
+      }
+      .slink {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--dark);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 7px 11px;
+        margin-bottom: 5px;
+        font-size: 0.73rem;
+      }
+      .slink .sn {
+        color: var(--muted);
+      }
+      .slink .sc {
+        color: var(--yellow);
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .lcard {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 9px 11px;
+        margin-bottom: 7px;
+      }
+      .lav {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        position: relative;
+      }
+      .lav.d {
+        background: rgba(34, 197, 94, 0.12);
+        border: 2px solid var(--green);
+      }
+      .lav.o {
+        background: rgba(59, 130, 246, 0.12);
+        border: 2px solid var(--blue);
+      }
+      .lav.x {
+        background: rgba(255, 255, 255, 0.04);
+        border: 2px solid #333;
+        opacity: 0.5;
+      }
+      .sr {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        border: 2px solid var(--dark);
+      }
+      .sr.d {
+        background: var(--green);
+      }
+      .sr.o {
+        background: var(--blue);
+      }
+      .sr.x {
+        background: #555;
+      }
+      .lname {
+        font-weight: 600;
+        font-size: 0.83rem;
+      }
+      .lzone {
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
+      .lstatus {
+        margin-left: auto;
+        font-size: 0.68rem;
+      }
+      .lstatus.d {
+        color: var(--green);
+      }
+      .lstatus.o {
+        color: var(--blue);
+      }
+      .rcard {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 8px 11px;
+        margin-bottom: 6px;
+      }
+      .ri {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .ri.on {
+        background: var(--green);
+        animation: pdot 2s infinite;
+      }
+      .ri.off {
+        background: #444;
+      }
+      .rpend {
+        background: var(--yellow);
+        color: var(--black);
+        font-size: 0.66rem;
+        font-weight: 800;
+        width: 19px;
+        height: 19px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* MODAL */
+      .overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.82);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+      }
+      .overlay.on {
+        display: flex;
+      }
+      .modal {
+        background: var(--card);
+        border: 2px solid var(--yellow);
+        border-radius: 18px;
+        padding: 26px;
+        max-width: 400px;
+        width: 90%;
+        animation: mpop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes mpop {
+        from {
+          transform: scale(0.8);
+          opacity: 0;
+        }
+        to {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      .memoji {
+        font-size: 2.6rem;
+        text-align: center;
+        margin-bottom: 8px;
+      }
+      .mtitle {
+        font-family: "Syne", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        text-align: center;
+        color: var(--yellow);
+        margin-bottom: 3px;
+      }
+      .msub {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-bottom: 16px;
+      }
+      .mdetails {
+        background: var(--dark);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+      .mrow {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        font-size: 0.82rem;
+      }
+      .mrow:not(:last-child) {
+        border-bottom: 1px solid var(--border);
+      }
+      .mrow .ml {
+        color: var(--muted);
+      }
+      .mrow .mv {
+        font-weight: 600;
+        text-align: right;
+        max-width: 60%;
+      }
+      .mbtns {
+        display: flex;
+        gap: 9px;
+      }
+      .mbtns .btn {
+        flex: 1;
+        justify-content: center;
+        padding: 10px;
+        font-size: 0.83rem;
+      }
+
+      /* TOAST */
+      .tc {
+        position: fixed;
+        top: 76px;
+        right: 18px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .toast {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 11px 15px;
+        max-width: 280px;
+        animation: tin 0.3s ease-out;
+        display: flex;
+        gap: 9px;
+      }
+      .toast.s {
+        border-left: 3px solid var(--green);
+      }
+      .toast.w {
+        border-left: 3px solid var(--yellow);
+      }
+      .toast.e {
+        border-left: 3px solid var(--red);
+      }
+      .toast.i {
+        border-left: 3px solid var(--blue);
+      }
+      @keyframes tin {
+        from {
+          transform: translateX(36px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      .tt {
+        font-weight: 700;
+        font-size: 0.81rem;
+        margin-bottom: 1px;
+      }
+      .tb {
+        font-size: 0.73rem;
+        color: var(--muted);
+      }
+
+      /* CONNECTION STATUS */
+      .conn-badge {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.73rem;
+        padding: 4px 10px;
+        border-radius: 100px;
+        border: 1px solid;
+      }
+      .conn-badge.connected {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: var(--green);
+      }
+      .conn-badge.disconnected {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: var(--red);
+      }
+      .conn-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        animation: pdot 1s infinite;
+      }
+      .conn-dot.connected {
+        background: var(--green);
+      }
+      .conn-dot.disconnected {
+        background: var(--red);
+      }
+
+      .empty {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--muted);
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      @media (max-width: 860px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          display: none;
+        }
+        .stats-bar {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .type-stats {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══ CONFIGURATION FIREBASE ══ -->
+    <div class="config-screen" id="configScreen">
+      <div class="config-logo">🛵 TROPRAPIDE</div>
+      <div class="config-sub">
+        Configuration Firebase — à faire une seule fois
+      </div>
+      <div class="config-card">
+        <div class="config-title">🔥 Connecter Firebase</div>
+        <div class="config-desc">
+          Firebase permet la synchronisation en temps réel entre votre admin,
+          les restaurants et les livreurs. C'est gratuit.
+        </div>
+
+        <div class="config-step">
+          <div class="config-num">1</div>
+          <div class="config-step-text">
+            Allez sur
+            <a href="https://console.firebase.google.com" target="_blank"
+              >console.firebase.google.com</a
+            >
+            → Créez un projet → Nommez-le <strong>troprapide</strong>
+          </div>
+        </div>
+        <div class="config-step">
+          <div class="config-num">2</div>
+          <div class="config-step-text">
+            Dans votre projet → <strong>Realtime Database</strong> →
+            <strong>Créer une base de données</strong> → Mode test → Copier
+            l'URL
+          </div>
+        </div>
+        <div class="config-step">
+          <div class="config-num">3</div>
+          <div class="config-step-text">
+            Dans <strong>Paramètres du projet</strong> →
+            <strong>Vos applications</strong> → Icône Web → Enregistrer → Copier
+            les infos ci-dessous
+          </div>
+        </div>
+
+        <div class="field">
+          <label
+            >Database URL (ex: https://troprapide-xxx.firebaseio.com)</label
+          >
+          <input
+            type="text"
+            id="cfg_dburl"
+            placeholder="https://troprapide-xxxxx-default-rtdb.firebaseio.com"
+          />
+        </div>
+        <div class="field">
+          <label>API Key</label>
+          <input type="text" id="cfg_apikey" placeholder="AIzaSy..." />
+        </div>
+        <div class="field">
+          <label>Project ID</label>
+          <input
+            type="text"
+            id="cfg_projectid"
+            placeholder="troprapide-xxxxx"
+          />
+        </div>
+
+        <button class="btn-connect" onclick="connectFirebase()">
+          🔥 CONNECTER FIREBASE
+        </button>
+        <div class="firebase-hint">
+          Ces informations sont sauvegardées localement sur votre navigateur.<br />Vous
+          n'aurez à les saisir qu'une seule fois.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MAIN APP ══ -->
+    <div id="mainApp" style="display: none">
+      <header>
+        <div class="logo">
+          <div class="logo-dot"></div>
+          TROPRAPIDE
+        </div>
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          ADMIN LIVE
+        </div>
+        <div class="hactions">
+          <div class="conn-badge connected" id="connBadge">
+            <div class="conn-dot connected" id="connDot"></div>
+            <span id="connText">Firebase</span>
+          </div>
+          <button class="hbtn active" id="soundBtn" onclick="toggleSound()">
+            🔔 Son
+          </button>
+          <button class="hbtn" onclick="clearAll()" style="color: var(--red)">
+            🗑 Vider
+          </button>
+          <button class="hbtn" onclick="resetConfig()">⚙️</button>
+        </div>
+      </header>
+
+      <div class="container">
+        <div class="main">
+          <!-- FORM -->
+          <div class="order-form">
+            <div class="form-title">⚡ Nouvelle commande</div>
+            <div class="type-row">
+              <div
+                class="type-btn active"
+                onclick="setType('repas', this)"
+                data-t="repas"
+              >
+                🍽 Repas
+              </div>
+              <div
+                class="type-btn"
+                onclick="setType('colis', this)"
+                data-t="colis"
+              >
+                📦 Colis
+              </div>
+              <div
+                class="type-btn"
+                onclick="setType('courses', this)"
+                data-t="courses"
+              >
+                🛒 Courses
+              </div>
+              <div
+                class="type-btn"
+                onclick="setType('medicaments', this)"
+                data-t="medicaments"
+              >
+                💊 Médic.
+              </div>
+              <div
+                class="type-btn"
+                onclick="setType('documents', this)"
+                data-t="documents"
+              >
+                📄 Docs
+              </div>
+              <div
+                class="type-btn"
+                onclick="setType('entreprise', this)"
+                data-t="entreprise"
+              >
+                🏢 Entrep.
+              </div>
+            </div>
+            <div class="grid2">
+              <div class="fg">
+                <label>Client</label
+                ><input type="text" id="f_client" placeholder="Nom du client" />
+              </div>
+              <div class="fg">
+                <label>Téléphone</label
+                ><input type="text" id="f_phone" placeholder="+225 07 ..." />
+              </div>
+              <div class="fg" id="fr_resto">
+                <label>Restaurant</label>
+                <select id="f_resto">
+                  <option>Mémé Choco</option>
+                  <option>Le Palais du Poulet</option>
+                  <option>Saveurs du Soleil</option>
+                  <option>Pizza House Abidjan</option>
+                  <option>Street Burger Corner</option>
+                  <option>Délices Asiatiques</option>
+                  <option>Juice & Smoothies Bar</option>
+                </select>
+              </div>
+              <div class="fg" id="fr_retrait" style="display: none">
+                <label>Adresse retrait</label
+                ><input
+                  type="text"
+                  id="f_retrait"
+                  placeholder="Quartier de départ"
+                />
+              </div>
+              <div class="fg">
+                <label>Zone livraison</label>
+                <select id="f_zone">
+                  <option>Cocody</option>
+                  <option>Plateau</option>
+                  <option>Yopougon</option>
+                  <option>Marcory</option>
+                  <option>Treichville</option>
+                  <option>Adjamé</option>
+                  <option>Abobo</option>
+                  <option>Koumassi</option>
+                </select>
+              </div>
+              <div class="fg full">
+                <label id="items_lbl">Articles commandés</label
+                ><input
+                  type="text"
+                  id="f_items"
+                  placeholder="Détail commande"
+                />
+              </div>
+              <div class="fg" id="fr_notes" style="display: none">
+                <label>Notes spéciales</label
+                ><input
+                  type="text"
+                  id="f_notes"
+                  placeholder="Fragile, urgent..."
+                />
+              </div>
+              <div class="fg">
+                <label>Montant (FCFA)</label
+                ><input type="number" id="f_amount" placeholder="0" />
+              </div>
+              <div class="fg">
+                <label>Paiement</label>
+                <select id="f_paiement">
+                  <option value="cash">💵 Cash livraison</option>
+                  <option value="momo">📱 Mobile Money</option>
+                  <option value="wave">🌊 Wave</option>
+                  <option value="prepaye">✅ Prépayé</option>
+                </select>
+              </div>
+              <div class="fg">
+                <label>Priorité</label>
+                <select id="f_priority">
+                  <option value="normale">Normale</option>
+                  <option value="urgente">🔴 Urgente</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn-create" id="createBtn" onclick="createOrder()">
+              ⚡ DÉCLENCHER L'ALERTE
+            </button>
+          </div>
+
+          <!-- STATS -->
+          <div class="stats-bar">
+            <div class="stat-card y">
+              <div class="stat-lbl">En attente</div>
+              <div class="stat-val y" id="sw">0</div>
+            </div>
+            <div class="stat-card o">
+              <div class="stat-lbl">En route</div>
+              <div class="stat-val o" id="sr2">0</div>
+            </div>
+            <div class="stat-card g">
+              <div class="stat-lbl">Livrées</div>
+              <div class="stat-val g" id="sd">0</div>
+            </div>
+            <div class="stat-card b">
+              <div class="stat-lbl">Revenu FCFA</div>
+              <div class="stat-val b" id="srev">0</div>
+            </div>
+          </div>
+
+          <div class="type-stats">
+            <div class="ts af" onclick="filterType('all', this)">
+              <div class="ts-ico">📋</div>
+              <div class="ts-n" id="ts-all">0</div>
+              <div class="ts-l">Toutes</div>
+            </div>
+            <div class="ts" onclick="filterType('repas', this)">
+              <div class="ts-ico">🍽</div>
+              <div class="ts-n" id="ts-repas">0</div>
+              <div class="ts-l">Repas</div>
+            </div>
+            <div class="ts" onclick="filterType('colis', this)">
+              <div class="ts-ico">📦</div>
+              <div class="ts-n" id="ts-colis">0</div>
+              <div class="ts-l">Colis</div>
+            </div>
+            <div class="ts" onclick="filterType('courses', this)">
+              <div class="ts-ico">🛒</div>
+              <div class="ts-n" id="ts-courses">0</div>
+              <div class="ts-l">Courses</div>
+            </div>
+            <div class="ts" onclick="filterType('medicaments', this)">
+              <div class="ts-ico">💊</div>
+              <div class="ts-n" id="ts-medicaments">0</div>
+              <div class="ts-l">Médic.</div>
+            </div>
+            <div class="ts" onclick="filterType('documents', this)">
+              <div class="ts-ico">📄</div>
+              <div class="ts-n" id="ts-documents">0</div>
+              <div class="ts-l">Docs</div>
+            </div>
+            <div class="ts" onclick="filterType('entreprise', this)">
+              <div class="ts-ico">🏢</div>
+              <div class="ts-n" id="ts-entreprise">0</div>
+              <div class="ts-l">Entrep.</div>
+            </div>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 12px;
+            "
+          >
+            <div
+              style="
+                font-family: &quot;Syne&quot;, sans-serif;
+                font-size: 0.9rem;
+                font-weight: 700;
+              "
+            >
+              Commandes
+              <span
+                style="
+                  background: var(--yellow);
+                  color: var(--black);
+                  font-size: 0.68rem;
+                  font-weight: 800;
+                  padding: 2px 8px;
+                  border-radius: 100px;
+                "
+                id="activeCount"
+                >0</span
+              >
+            </div>
+          </div>
+          <div class="tabs">
+            <div class="tab active" onclick="filterStatus('all', this)">
+              Toutes
+            </div>
+            <div class="tab" onclick="filterStatus('nouvelle', this)">
+              Nouvelles
+            </div>
+            <div class="tab" onclick="filterStatus('en-route', this)">
+              En route
+            </div>
+            <div class="tab" onclick="filterStatus('livree', this)">
+              Livrées
+            </div>
+          </div>
+          <div class="order-list" id="orderList">
+            <div class="empty">📋 Aucune commande.</div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+          <div>
+            <div class="share-box">
+              <div class="share-title">🔗 Liens équipe</div>
+              <div class="slink">
+                <span class="sn">🍽 Restaurant</span
+                ><span class="sc" onclick="copyLink('restaurant')">Copier</span>
+              </div>
+              <div class="slink">
+                <span class="sn">🛵 Livreur</span
+                ><span class="sc" onclick="copyLink('livreur')">Copier</span>
+              </div>
+              <div
+                style="font-size: 0.68rem; color: var(--muted); margin-top: 6px"
+              >
+                Envoyez par WhatsApp
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="stitle">🛵 Livreurs</div>
+            <div class="lcard">
+              <div class="lav d">🧑🏾<span class="sr d"></span></div>
+              <div>
+                <div class="lname">Mamadou T.</div>
+                <div class="lzone">Cocody · Plateau</div>
+              </div>
+              <div class="lstatus d">Disponible</div>
+            </div>
+            <div class="lcard">
+              <div class="lav d">👨🏿<span class="sr d"></span></div>
+              <div>
+                <div class="lname">Kouassi B.</div>
+                <div class="lzone">Yopougon</div>
+              </div>
+              <div class="lstatus d">Disponible</div>
+            </div>
+            <div class="lcard">
+              <div class="lav o">👨🏾<span class="sr o"></span></div>
+              <div>
+                <div class="lname">Ibrahim D.</div>
+                <div class="lzone">Marcory</div>
+              </div>
+              <div class="lstatus o">En livraison</div>
+            </div>
+            <div class="lcard">
+              <div class="lav x">👱🏾<span class="sr x"></span></div>
+              <div>
+                <div class="lname">Narcisse K.</div>
+                <div class="lzone">Port-Bouët</div>
+              </div>
+              <div
+                class="lstatus"
+                style="color: var(--muted); font-size: 0.68rem"
+              >
+                Hors ligne
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="stitle">🍽 Restaurants</div>
+            <div class="rcard">
+              <div class="ri on"></div>
+              <div style="flex: 1; font-size: 0.8rem">Le Palais du Poulet</div>
+              <div class="rpend" id="rp-0">0</div>
+            </div>
+            <div class="rcard">
+              <div class="ri on"></div>
+              <div style="flex: 1; font-size: 0.8rem">Saveurs du Soleil</div>
+              <div class="rpend" id="rp-1">0</div>
+            </div>
+            <div class="rcard">
+              <div class="ri on"></div>
+              <div style="flex: 1; font-size: 0.8rem">Pizza House Abidjan</div>
+              <div class="rpend" id="rp-2">0</div>
+            </div>
+            <div class="rcard">
+              <div class="ri on"></div>
+              <div style="flex: 1; font-size: 0.8rem">Street Burger Corner</div>
+              <div class="rpend" id="rp-3">0</div>
+            </div>
+            <div class="rcard">
+              <div class="ri off"></div>
+              <div style="flex: 1; font-size: 0.8rem">Délices Asiatiques</div>
+              <div class="rpend" id="rp-4">0</div>
+            </div>
+            <div class="rcard">
+              <div class="ri on"></div>
+              <div style="flex: 1; font-size: 0.8rem">
+                Juice & Smoothies Bar
+              </div>
+              <div class="rpend" id="rp-5">0</div>
+            </div>
+          </div>
+          <div>
+            <div class="stitle">📜 Journal</div>
+            <div
+              id="logList"
+              style="font-size: 0.74rem; color: var(--muted); line-height: 1.9"
+            >
+              <div
+                style="
+                  color: #444;
+                  font-style: italic;
+                  text-align: center;
+                  padding: 6px 0;
+                "
+              >
+                Aucun événement
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="overlay" id="overlay">
+      <div class="modal">
+        <div class="memoji" id="mEmoji">🛵</div>
+        <div class="mtitle">Nouvelle commande !</div>
+        <div class="msub" id="mSub"></div>
+        <div class="mdetails" id="mDetails"></div>
+        <div class="mbtns">
+          <button class="btn bp" onclick="acceptOrder()">✓ Accepter</button>
+          <button class="btn bwa" onclick="notifyWA_modal()">
+            💬 WhatsApp
+          </button>
+          <button class="btn bd" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tc" id="tc"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        onValue,
+        update,
+        remove,
+        get,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+      // ── CONFIG ──
+      const CFG_KEY = "troprapide_firebase_cfg";
+      let db = null,
+        ordersRef = null;
+      let soundEnabled = true,
+        pendingModal = null;
+      let currentStatus = "all",
+        currentType = "all";
+      let orders = {},
+        logs = [];
+      const PAYLBL = {
+        cash: "💵 Cash",
+        momo: "📱 Mobile Money",
+        wave: "🌊 Wave",
+        prepaye: "✅ Prépayé",
+      };
+      const TYPES = {
+        repas: { e: "🍽", l: "Repas restaurant", il: "Articles commandés" },
+        colis: { e: "📦", l: "Envoi de colis", il: "Description du colis" },
+        courses: { e: "🛒", l: "Courses / Achats", il: "Liste des articles" },
+        medicaments: {
+          e: "💊",
+          l: "Médicaments",
+          il: "Médicaments / ordonnance",
+        },
+        documents: { e: "📄", l: "Documents urgents", il: "Type de documents" },
+        entreprise: {
+          e: "🏢",
+          l: "Livraison entreprise",
+          il: "Description / référence",
+        },
+      };
+      let currentOrderType = "repas";
+
+      // ── FIREBASE CONNECT ──
+      window.connectFirebase = function () {
+        const dburl = document.getElementById("cfg_dburl").value.trim();
+        const apiKey = document.getElementById("cfg_apikey").value.trim();
+        const projectId = document.getElementById("cfg_projectid").value.trim();
+        if (!dburl || !apiKey || !projectId) {
+          alert("Remplissez tous les champs !");
+          return;
+        }
+        const cfg = { dburl, apiKey, projectId };
+        localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+        initFirebase(cfg);
+      };
+
+      function initFirebase(cfg) {
+        try {
+          const app = initializeApp({
+            apiKey: cfg.apiKey,
+            databaseURL: cfg.dburl,
+            projectId: cfg.projectId,
+          });
+          db = getDatabase(app);
+          ordersRef = ref(db, "orders");
+          document.getElementById("configScreen").style.display = "none";
+          document.getElementById("mainApp").style.display = "block";
+          setConnected(true);
+          startListening();
+          addLog("🔥 Firebase connecté");
+        } catch (e) {
+          alert("Erreur Firebase : " + e.message);
+          setConnected(false);
+        }
+      }
+
+      function setConnected(ok) {
+        const b = document.getElementById("connBadge");
+        const d = document.getElementById("connDot");
+        const t = document.getElementById("connText");
+        b.className = "conn-badge " + (ok ? "connected" : "disconnected");
+        d.className = "conn-dot " + (ok ? "connected" : "disconnected");
+        t.textContent = ok ? "🔥 Firebase" : "❌ Déconnecté";
+      }
+
+      // ── AUTO INIT ──
+      const saved = localStorage.getItem(CFG_KEY);
+      if (saved) {
+        try {
+          initFirebase(JSON.parse(saved));
+        } catch (e) {}
+      }
+
+      // ── LISTEN ──
+      function startListening() {
+        onValue(
+          ordersRef,
+          (snap) => {
+            orders = snap.val() || {};
+            renderOrders();
+            addLog("🔄 Données synchronisées");
+          },
+          (err) => {
+            setConnected(false);
+            addLog("❌ Erreur sync: " + err.message);
+          },
+        );
+      }
+
+      // ── CREATE ORDER ──
+      window.createOrder = async function () {
+        if (!db) {
+          alert("Firebase non connecté !");
+          return;
+        }
+        const client = document.getElementById("f_client").value || "Client";
+        const phone = document.getElementById("f_phone").value || "+225...";
+        const zone = document.getElementById("f_zone").value;
+        const items = document.getElementById("f_items").value || "Commande";
+        const amount = document.getElementById("f_amount").value || "0";
+        const priority = document.getElementById("f_priority").value;
+        const paiement = document.getElementById("f_paiement").value;
+        const notes = document.getElementById("f_notes").value || "";
+        const restaurant =
+          currentOrderType === "repas"
+            ? document.getElementById("f_resto").value
+            : document.getElementById("f_retrait").value || "À définir";
+
+        const order = {
+          client,
+          phone,
+          restaurant,
+          zone,
+          items,
+          amount,
+          priority,
+          paiement,
+          notes,
+          type: currentOrderType,
+          status: "nouvelle",
+          createdAt: Date.now(),
+          isNew: true,
+        };
+
+        try {
+          const newRef = await push(ordersRef, order);
+          const cfg = TYPES[currentOrderType];
+          playAlert();
+          toast(`${cfg.e} Commande créée !`, `${items} · ${zone}`, "w");
+          setTimeout(
+            () =>
+              toast(
+                "🛵 Livreurs alertés",
+                `Zone: ${zone} · ${amount} FCFA`,
+                "i",
+              ),
+            600,
+          );
+          addLog(`🆕 ${cfg.e} [${cfg.l}] · ${zone}`);
+          // Clear new flag after 6s
+          setTimeout(
+            () => update(ref(db, "orders/" + newRef.key), { isNew: false }),
+            6000,
+          );
+        } catch (e) {
+          toast("Erreur", e.message, "e");
+        }
+      };
+
+      // ── UPDATE STATUS ──
+      window.updateStatus = async function (key, newStatus) {
+        if (!db) return;
+        try {
+          await update(ref(db, "orders/" + key), { status: newStatus });
+          addLog(`↻ Commande → ${newStatus}`);
+          toast(
+            newStatus === "livree" ? "✅ Livrée !" : "↻ Statut mis à jour",
+            "",
+            "s",
+          );
+        } catch (e) {
+          toast("Erreur", e.message, "e");
+        }
+      };
+
+      window.cancelOrder = async function (key) {
+        if (!db) return;
+        if (!confirm("Annuler cette commande ?")) return;
+        try {
+          await remove(ref(db, "orders/" + key));
+          toast("Commande annulée", "", "e");
+          addLog("✕ Commande annulée");
+        } catch (e) {
+          toast("Erreur", e.message, "e");
+        }
+      };
+
+      window.clearAll = async function () {
+        if (!db) return;
+        if (!confirm("Vider toutes les commandes ?")) return;
+        try {
+          await remove(ordersRef);
+          toast("Toutes les commandes supprimées", "", "e");
+        } catch (e) {
+          toast("Erreur", e.message, "e");
+        }
+      };
+
+      // ── RENDER ──
+      function renderOrders() {
+        const all = Object.entries(orders)
+          .map(([k, v]) => ({ ...v, _key: k }))
+          .sort((a, b) => b.createdAt - a.createdAt);
+
+        let list = all;
+        if (currentStatus !== "all")
+          list = list.filter((o) => o.status === currentStatus);
+        if (currentType !== "all")
+          list = list.filter((o) => o.type === currentType);
+
+        const el = document.getElementById("orderList");
+        if (!list.length) {
+          el.innerHTML = '<div class="empty">📋 Aucune commande ici.</div>';
+          updateStats(all);
+          return;
+        }
+
+        const SL = {
+          nouvelle: "🔴 Nouvelle",
+          acceptee: "🟠 Acceptée",
+          "en-route": "🔵 En route",
+          prete: "🍽 Prête",
+          livree: "✅ Livrée",
+        };
+        el.innerHTML = list
+          .map((o) => {
+            const cfg = TYPES[o.type] || TYPES.repas;
+            const elapsed = Math.floor((Date.now() - o.createdAt) / 60000);
+            return `<div class="oc ${o.isNew ? "new-a" : ""} ${o.priority === "urgente" ? "urg" : ""}">
+      <div class="ot">
+        <div>
+          <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+            <div class="oid">#${o._key.slice(-6).toUpperCase()}</div>
+            <span class="tbadge ${o.type}">${cfg.e} ${cfg.l}</span>
+          </div>
+          <div class="otime">⏱ ${elapsed} min · 📍 ${o.zone}</div>
+        </div>
+        <span class="sb ${o.status}">${SL[o.status] || o.status}</span>
+      </div>
+      <div class="orest">${o.type === "repas" ? "🍽" : "📌"} ${o.restaurant}</div>
+      <div class="oitems">${o.items}${o.notes ? " · " + o.notes : ""}</div>
+      <div class="ofooter">
+        <span class="oprice">${Number(o.amount).toLocaleString()} FCFA</span>
+        <span style="font-size:.7rem;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:5px;color:var(--muted)">${PAYLBL[o.paiement] || ""}</span>
+        <span style="font-size:.7rem;color:var(--muted)">👤 ${o.client} · ${o.phone}</span>
+      </div>
+      <div class="abts">
+        ${o.status === "nouvelle" ? `<button class="btn bp" onclick="updateStatus('${o._key}','acceptee')">✓ Accepter</button>` : ""}
+        ${o.status === "acceptee" ? `<button class="btn bp" onclick="updateStatus('${o._key}','en-route')">🛵 En route</button>` : ""}
+        ${o.status === "en-route" ? `<button class="btn bp" onclick="updateStatus('${o._key}','livree')">✅ Livrée</button>` : ""}
+        <button class="btn bwa" onclick="notifyWAOrder('${o._key}')">💬 WhatsApp</button>
+        ${o.status !== "livree" ? `<button class="btn bd" onclick="cancelOrder('${o._key}')">✕</button>` : ""}
+      </div>
+    </div>`;
+          })
+          .join("");
+        updateStats(all);
+      }
+
+      function updateStats(all) {
+        document.getElementById("sw").textContent = all.filter(
+          (o) => o.status === "nouvelle" || o.status === "acceptee",
+        ).length;
+        document.getElementById("sr2").textContent = all.filter(
+          (o) => o.status === "en-route",
+        ).length;
+        document.getElementById("sd").textContent = all.filter(
+          (o) => o.status === "livree",
+        ).length;
+        document.getElementById("srev").textContent = all
+          .filter((o) => o.status === "livree")
+          .reduce((s, o) => s + Number(o.amount || 0), 0)
+          .toLocaleString("fr-FR");
+        document.getElementById("activeCount").textContent = all.filter(
+          (o) => o.status !== "livree",
+        ).length;
+        [
+          "all",
+          "repas",
+          "colis",
+          "courses",
+          "medicaments",
+          "documents",
+          "entreprise",
+        ].forEach((t) => {
+          const el = document.getElementById("ts-" + t);
+          if (el)
+            el.textContent =
+              t === "all" ? all.length : all.filter((o) => o.type === t).length;
+        });
+        [
+          "Le Palais du Poulet",
+          "Saveurs du Soleil",
+          "Pizza House Abidjan",
+          "Street Burger Corner",
+          "Délices Asiatiques",
+          "Juice & Smoothies Bar",
+        ].forEach((r, i) => {
+          const el = document.getElementById("rp-" + i);
+          if (el)
+            el.textContent = all.filter(
+              (o) => o.restaurant === r && o.status !== "livree",
+            ).length;
+        });
+      }
+
+      // ── FILTERS ──
+      window.filterStatus = function (s, el) {
+        currentStatus = s;
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+        renderOrders();
+      };
+      window.filterType = function (t, el) {
+        currentType = t;
+        document
+          .querySelectorAll(".ts")
+          .forEach((c) => c.classList.remove("af"));
+        el.classList.add("af");
+        renderOrders();
+      };
+
+      // ── TYPE SWITCH ──
+      window.setType = function (type, el) {
+        currentOrderType = type;
+        document
+          .querySelectorAll(".type-btn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        const cfg = TYPES[type];
+        const isRepas = type === "repas";
+        document.getElementById("fr_resto").style.display = isRepas
+          ? ""
+          : "none";
+        document.getElementById("fr_retrait").style.display = isRepas
+          ? "none"
+          : "";
+        document.getElementById("fr_notes").style.display =
+          type === "colis" || type === "medicaments" ? "" : "none";
+        document.getElementById("items_lbl").textContent = cfg.il;
+        document.getElementById("createBtn").textContent =
+          `⚡ ${cfg.l.toUpperCase()}`;
+      };
+
+      // ── WHATSAPP ──
+      window.notifyWAOrder = function (key) {
+        const o = orders[key];
+        if (!o) return;
+        const cfg = TYPES[o.type] || TYPES.repas;
+        const msg = encodeURIComponent(
+          `🛵 TROPRAPIDE\n${cfg.e} ${cfg.l}\n📦 ${o.items}\n💰 ${o.amount} FCFA\n📍 ${o.zone}\n👤 ${o.client} — ${o.phone}${o.notes ? "\n📝 " + o.notes : ""}`,
+        );
+        window.open(`https://wa.me/2250140503030?text=${msg}`, "_blank");
+      };
+
+      window.notifyWA_modal = function () {
+        if (!pendingModal) return;
+        notifyWAOrder(pendingModal._key);
+        closeModal();
+      };
+
+      // ── MODAL ──
+      window.acceptOrder = function () {
+        if (!pendingModal) return;
+        updateStatus(pendingModal._key, "acceptee");
+        closeModal();
+      };
+      window.closeModal = function () {
+        document.getElementById("overlay").classList.remove("on");
+      };
+
+      // ── SOUND ──
+      window.toggleSound = function () {
+        soundEnabled = !soundEnabled;
+        const b = document.getElementById("soundBtn");
+        b.textContent = soundEnabled ? "🔔 Son" : "🔕 Son";
+        b.classList.toggle("active", soundEnabled);
+      };
+      function playAlert() {
+        if (!soundEnabled) return;
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          [
+            [880, 0],
+            [1100, 0.18],
+            [880, 0.36],
+            [1320, 0.54],
+          ].forEach(([f, t]) => {
+            const o = ctx.createOscillator(),
+              g = ctx.createGain();
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.frequency.value = f;
+            o.type = "sine";
+            g.gain.setValueAtTime(0, ctx.currentTime + t);
+            g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.05);
+            g.gain.linearRampToValueAtTime(0, ctx.currentTime + t + 0.14);
+            o.start(ctx.currentTime + t);
+            o.stop(ctx.currentTime + t + 0.15);
+          });
+        } catch (e) {}
+      }
+
+      // ── LOG ──
+      function addLog(msg) {
+        const t = new Date().toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        logs.unshift({ t, msg });
+        if (logs.length > 25) logs.pop();
+        document.getElementById("logList").innerHTML = logs
+          .map(
+            (l) =>
+              `<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;gap:5px"><span style="color:#555;white-space:nowrap">${l.t}</span><span>${l.msg}</span></div>`,
+          )
+          .join("");
+      }
+
+      // ── TOAST ──
+      function toast(title, body = "", type = "s") {
+        const icons = { s: "✅", w: "⚠️", e: "❌", i: "ℹ️" };
+        const c = document.getElementById("tc");
+        const el = document.createElement("div");
+        el.className = `toast ${type}`;
+        el.innerHTML = `<div style="font-size:1.1rem">${icons[type]}</div><div><div class="tt">${title}</div>${body ? `<div class="tb">${body}</div>` : ""}</div>`;
+        c.prepend(el);
+        setTimeout(() => (el.style.opacity = "0"), 3000);
+        setTimeout(() => el.remove(), 3400);
+      }
+
+      // ── COPY LINK ──
+      window.copyLink = function (type) {
+        const base = window.location.href.replace("admin.html", "");
+        const url = base + type + ".html";
+        navigator.clipboard
+          .writeText(url)
+          .then(() => toast("Lien copié !", "Envoyez par WhatsApp", "s"))
+          .catch(() => toast("Lien: " + url, "", "i"));
+      };
+
+      window.resetConfig = function () {
+        if (confirm("Réinitialiser la configuration Firebase ?")) {
+          localStorage.removeItem(CFG_KEY);
+          location.reload();
+        }
+      };
+
+      addLog("🟢 Admin TropRapide démarré");
+    </script>
+  </body>
+</html>
