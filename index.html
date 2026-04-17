@@ -741,12 +741,12 @@
     }
 
     function resetDB() {
-      if (!confirm('Supprimer toutes les données ?')) return;
+      if (!confirm('Supprimer toutes les commandes ? (Les livreurs ne seront pas supprimés)')) return;
       _fbdb.ref('orders').remove();
-      _fbdb.ref('livreurs').remove();
-      _cache = { orders: {}, drivers: {}, log: [], revenue: 0 };
+      _cache.orders = {};
+      _cache.log = [];
       render();
-      addLog('🗑️ Base de données réinitialisée');
+      addLog('🗑️ Commandes réinitialisées');
     }
 
     function clearLog() {
