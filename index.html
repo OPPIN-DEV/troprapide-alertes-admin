@@ -555,7 +555,9 @@
         const load = d.activeOrders || 0;
         const perf = d.speed || 1;
         const score = dist + (load * 2) - perf;
-        if (score < bestScore) { bestScore = score; best = { id, ...d, _dist: dist.toFixed(1), _score: score.toFixed(2) }; }
+        // Guard: NaN score (missing coords) — still prefer this driver over no driver
+        const effectiveScore = isNaN(score) ? 999 : score;
+        if (effectiveScore < bestScore) { bestScore = effectiveScore; best = { id, ...d, _dist: isNaN(dist) ? '?' : dist.toFixed(1), _score: effectiveScore.toFixed(2) }; }
       });
       return best;
     }
@@ -564,6 +566,14 @@
       const order = _cache.orders[orderId];
       if (!order || order.assignedTo || order.status === 'livree') return false;
       if (order.status !== 'prete') { addLog(`⚠️ #${orderId} pas encore prête`); render(); return false; }
+
+      // Customer app doesn't send lat/lng — add them from zone if missing
+      if (!order.lat || !order.lng) {
+        const zc = ZONES[order.zone];
+        order.lat = zc ? zc.lat : 5.340;
+        order.lng = zc ? zc.lng : -4.010;
+        _fbdb.ref('orders/' + orderId).update({ lat: order.lat, lng: order.lng });
+      }
 
       // Always fetch fresh drivers from Firebase
       _fbdb.ref('livreurs').once('value').then(snap => {
