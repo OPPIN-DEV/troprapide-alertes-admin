@@ -741,11 +741,12 @@
       } catch (e) { }
     }
 
-    /* Firebase real-time listener — replaces localStorage + storage events + polling */
+    /* Firebase real-time listeners — separate paths (avoids root permission issues) */
     let _initialLoad = true;
-    rtdb.ref('/').on('value', snap => {
-      state = snap.val() || { orders: {}, drivers: {}, log: {}, revenue: 0 };
+    let _ordersReady = false, _driversReady = false;
 
+    function onFirebaseUpdate() {
+      if (!_ordersReady || !_driversReady) return;
       const currentIds = Object.keys(state.orders || {});
       if (!_initialLoad) {
         let hasNew = false;
@@ -754,10 +755,33 @@
       }
       currentIds.forEach(id => _knownOrderIds.add(id));
       _initialLoad = false;
-
       autoDispatchWatcher();
       render();
+    }
+
+    rtdb.ref('/orders').on('value', snap => {
+      state.orders = snap.val() || {};
+      _ordersReady = true;
+      onFirebaseUpdate();
+    }, err => {
+      document.getElementById('orders-list').innerHTML =
+        `<p style="color:var(--red);text-align:center;padding:20px;">❌ Erreur Firebase: ${err.code}<br>Vérifiez les règles Realtime Database</p>`;
     });
+
+    rtdb.ref('/drivers').on('value', snap => {
+      state.drivers = snap.val() || {};
+      _driversReady = true;
+      onFirebaseUpdate();
+    }, err => console.error('drivers:', err.code));
+
+    rtdb.ref('/log').on('value', snap => {
+      state.log = snap.val() || {};
+      if (_ordersReady && _driversReady) render();
+    }, err => console.error('log:', err.code));
+
+    rtdb.ref('/revenue').on('value', snap => {
+      state.revenue = snap.val() || 0;
+    }, () => {});
   </script>
 </body>
 
