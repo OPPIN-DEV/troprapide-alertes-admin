@@ -526,9 +526,9 @@
       updates[`/orders/${orderId}/assignedName`] = best.name;
       updates[`/orders/${orderId}/status`] = 'attribue';
       updates[`/orders/${orderId}/dispatchedAt`] = Date.now();
-      updates[`/drivers/${best.id}/status`] = 'busy';
-      updates[`/drivers/${best.id}/activeOrders`] = (best.activeOrders || 0) + 1;
-      updates[`/drivers/${best.id}/currentOrder`] = orderId;
+      updates[`/livreurs/${best.id}/status`] = 'busy';
+      updates[`/livreurs/${best.id}/activeOrders`] = (best.activeOrders || 0) + 1;
+      updates[`/livreurs/${best.id}/currentOrder`] = orderId;
       rtdb.ref().update(updates);
       addLog(`✅ #${orderId.slice(-4)} → ${best.name} | ${best._dist} km | score ${best._score}`);
       return true;
@@ -645,7 +645,7 @@
       const updates = {};
 
       if (!existingDrivers) {
-        Object.entries(SEED_DRIVERS).forEach(([id, d]) => { updates[`/drivers/${id}`] = d; });
+        Object.entries(SEED_DRIVERS).forEach(([id, d]) => { updates[`/livreurs/${id}`] = d; });
       }
 
       for (let i = 0; i < 6; i++) {
@@ -669,9 +669,9 @@
           order.assignedTo = dId;
           order.assignedName = drivers[dId].name;
           order.dispatchedAt = Date.now();
-          updates[`/drivers/${dId}/status`] = 'busy';
-          updates[`/drivers/${dId}/activeOrders`] = (drivers[dId].activeOrders || 0) + 1;
-          updates[`/drivers/${dId}/currentOrder`] = id;
+          updates[`/livreurs/${dId}/status`] = 'busy';
+          updates[`/livreurs/${dId}/activeOrders`] = (drivers[dId].activeOrders || 0) + 1;
+          updates[`/livreurs/${dId}/currentOrder`] = id;
         }
         updates[`/orders/${id}`] = order;
       }
@@ -685,7 +685,7 @@
       rtdb.ref('/log').remove();
       const driverIds = Object.keys(state.drivers || SEED_DRIVERS);
       driverIds.forEach(id => {
-        rtdb.ref(`/drivers/${id}`).update({ status: 'available', activeOrders: 0, currentOrder: null });
+        rtdb.ref(`/livreurs/${id}`).update({ status: 'available', activeOrders: 0, currentOrder: null });
       });
     }
 
@@ -768,11 +768,15 @@
         `<p style="color:var(--red);text-align:center;padding:20px;">❌ Erreur Firebase: ${err.code}<br>Vérifiez les règles Realtime Database</p>`;
     });
 
-    rtdb.ref('/drivers').on('value', snap => {
+    rtdb.ref('/livreurs').on('value', snap => {
       state.drivers = snap.val() || {};
       _driversReady = true;
       onFirebaseUpdate();
-    }, err => console.error('drivers:', err.code));
+    }, err => {
+      console.error('livreurs:', err.code);
+      _driversReady = true;
+      onFirebaseUpdate();
+    });
 
     rtdb.ref('/log').on('value', snap => {
       state.log = snap.val() || {};
