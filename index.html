@@ -374,6 +374,7 @@
       <span class="clock" id="clock"></span>
       <button class="btn btn-ghost" onclick="seedDemo()">🌱 Seed Démo</button>
       <button class="btn btn-yellow" onclick="forceDispatchAll()">⚡ Dispatch Tout</button>
+      <button class="btn btn-green" onclick="releaseAllDrivers()">🔓 Libérer livreurs</button>
       <button class="btn btn-red" onclick="resetDB()">🗑️ Reset</button>
     </div>
   </div>
@@ -690,6 +691,19 @@
     }
 
     function clearLog() { rtdb.ref('/log').remove(); }
+
+    function releaseAllDrivers() {
+      const drivers = state.drivers || {};
+      const updates = {};
+      Object.keys(drivers).forEach(id => {
+        updates[`/livreurs/${id}/status`] = 'available';
+        updates[`/livreurs/${id}/activeOrders`] = 0;
+        updates[`/livreurs/${id}/currentOrder`] = null;
+      });
+      if (Object.keys(updates).length === 0) { alert('Aucun livreur à libérer'); return; }
+      rtdb.ref().update(updates);
+      addLog('🔓 Tous les livreurs remis disponibles');
+    }
 
     /* ============================================================
        AUTO-DISPATCH: surveille commandes "prête" non assignées
