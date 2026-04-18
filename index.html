@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Panel — TropRapide</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <style>
     :root {
       --bg: #000;
@@ -351,16 +353,6 @@
       font-size: .72rem;
     }
 
-    /* DISPATCH ALERT */
-    .dispatch-alert {
-      background: #1a1200;
-      border: 1px solid var(--yellow);
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
-      font-size: .85rem;
-    }
-
     /* SCROLLBAR */
     ::-webkit-scrollbar {
       width: 4px;
@@ -382,7 +374,6 @@
       <span class="clock" id="clock"></span>
       <button class="btn btn-ghost" onclick="seedDemo()">🌱 Seed Démo</button>
       <button class="btn btn-yellow" onclick="forceDispatchAll()">⚡ Dispatch Tout</button>
-      <button class="btn btn-ghost" onclick="resetDriverStatuses()">🟢 Libérer livreurs</button>
       <button class="btn btn-red" onclick="resetDB()">🗑️ Reset</button>
     </div>
   </div>
@@ -425,8 +416,7 @@
         <span id="order-count" style="color:var(--muted);font-size:.8rem;"></span>
       </div>
       <div class="panel-body" id="orders-list">
-        <p style="color:var(--muted);text-align:center;margin-top:40px;">Aucune commande — Clique sur "Seed Démo" pour
-          tester</p>
+        <p style="color:var(--muted);text-align:center;margin-top:40px;">Connexion Firebase…</p>
       </div>
     </div>
 
@@ -456,22 +446,23 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
     /* ============================================================
-       FIREBASE BACKEND
+       FIREBASE CONFIGURATION
        ============================================================ */
-    const FIREBASE_CONFIG = {
+    const firebaseConfig = {
       apiKey: "AIzaSyD0FL4ua8NUWKfwu_gGUL5TI1RkiNbBZnU",
       authDomain: "troprapide-821a7.firebaseapp.com",
       databaseURL: "https://troprapide-821a7-default-rtdb.firebaseio.com",
       projectId: "troprapide-821a7"
     };
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    const _fbdb = firebase.database();
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
 
-    let _cache = { orders: {}, drivers: {}, log: [], revenue: 0 };
+    /* ============================================================
+       STATE (populated by Firebase real-time listener)
+       ============================================================ */
+    let state = { orders: {}, drivers: {}, log: {}, revenue: 0 };
 
     const ZONES = {
       'Cocody': { lat: 5.370, lng: -3.980 },
@@ -488,58 +479,16 @@
       'd3': { name: 'Cédric Ama', avatar: '🏍️', lat: 5.352, lng: -4.020, status: 'available', speed: 1.5, activeOrders: 0 }
     };
 
-    function normalizeOrder(id, o) {
-      if (o.total == null && o.amount != null) o.total = Number(o.amount);
-      if (o.address == null && o.adresse != null) o.address = o.adresse;
-      if (!o.restaurantLat) { o.restaurantLat = 5.340; o.restaurantLng = -4.010; }
-      if (!o.lat && o.zone && ZONES[o.zone]) {
-        const zc = ZONES[o.zone];
-        o.lat = parseFloat((zc.lat + (Math.random() * 0.01 - 0.005)).toFixed(5));
-        o.lng = parseFloat((zc.lng + (Math.random() * 0.01 - 0.005)).toFixed(5));
-        _fbdb.ref('orders/' + id).update({ lat: o.lat, lng: o.lng, restaurantLat: o.restaurantLat, restaurantLng: o.restaurantLng });
-      }
-      return o;
-    }
-
-    function normalizeDriver(id, d) {
-      if (!d.name && d.nom) d.name = d.nom;
-      if (!d.name && d.prenom) d.name = (d.prenom + ' ' + (d.nom || '')).trim();
-      if (!d.name) d.name = 'Livreur #' + String(id).slice(-4);
-      if (!d.avatar) d.avatar = '🏍️';
-      if (!d.lat) d.lat = parseFloat((5.340 + (Math.random() * 0.06 - 0.03)).toFixed(5));
-      if (!d.lng) d.lng = parseFloat((-4.010 + (Math.random() * 0.06 - 0.03)).toFixed(5));
-      if (!d.speed) d.speed = 1.0;
-      if (d.activeOrders == null) d.activeOrders = 0;
-      if (!d.status && d.statut) d.status = d.statut;
-      if (['disponible', 'actif', 'libre', 'on', 'active'].includes(String(d.status).toLowerCase())) d.status = 'available';
-      if (['occupé', 'occupe', 'en_mission', 'busy_', 'off'].includes(String(d.status).toLowerCase())) d.status = 'busy';
-      if (!d.status) d.status = 'available';
-      return d;
-    }
-
-    function getDB() { return _cache; }
-
-    function saveDB(data) {
-      _cache = data;
-      const updates = {};
-      Object.entries(data.orders || {}).forEach(([id, o]) => { updates['orders/' + id] = o; });
-      Object.entries(data.drivers || {}).forEach(([id, d]) => { updates['livreurs/' + id] = d; });
-      if (Object.keys(updates).length > 0) _fbdb.ref().update(updates);
-    }
-
     /* XSS sanitization */
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
     function addLog(msg) {
-      _cache.log = _cache.log || [];
-      _cache.log.unshift({ time: Date.now(), msg });
-      if (_cache.log.length > 80) _cache.log = _cache.log.slice(0, 80);
+      rtdb.ref('/log').push({ time: Date.now(), msg });
     }
 
     /* ============================================================
        MOTEUR DE DISPATCH INTELLIGENT
        score = distance + (charge * 2) - performance
-       Plus le score est bas = meilleur livreur
        ============================================================ */
     function getDistance(lat1, lng1, lat2, lng2) {
       const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
@@ -549,58 +498,45 @@
 
     function findBestDriver(order, drivers) {
       let best = null, bestScore = Infinity;
+      const excluded = order.declinedBy ? Object.values(order.declinedBy) : [];
       Object.entries(drivers).forEach(([id, d]) => {
-        if (d.status !== 'available' && d.status !== 'disponible') return;
+        if (d.status !== 'available') return;
+        if (excluded.includes(id)) return;
         const dist = getDistance(order.lat, order.lng, d.lat, d.lng);
         const load = d.activeOrders || 0;
         const perf = d.speed || 1;
         const score = dist + (load * 2) - perf;
-        // Guard: NaN score (missing coords) — still prefer this driver over no driver
-        const effectiveScore = isNaN(score) ? 999 : score;
-        if (effectiveScore < bestScore) { bestScore = effectiveScore; best = { id, ...d, _dist: isNaN(dist) ? '?' : dist.toFixed(1), _score: effectiveScore.toFixed(2) }; }
+        if (score < bestScore) { bestScore = score; best = { id, ...d, _dist: dist.toFixed(1), _score: score.toFixed(2) }; }
       });
       return best;
     }
 
     function dispatchOrder(orderId) {
-      const order = _cache.orders[orderId];
+      const order = (state.orders || {})[orderId];
       if (!order || order.assignedTo || order.status === 'livree') return false;
-      if (order.status !== 'prete') { addLog(`⚠️ #${orderId} pas encore prête`); render(); return false; }
-
-      // Customer app doesn't send lat/lng — add them from zone if missing
-      if (!order.lat || !order.lng) {
-        const zc = ZONES[order.zone];
-        order.lat = zc ? zc.lat : 5.340;
-        order.lng = zc ? zc.lng : -4.010;
-        _fbdb.ref('orders/' + orderId).update({ lat: order.lat, lng: order.lng });
+      if (order.status !== 'prete' && order.status !== 'declined') {
+        addLog(`⚠️ #${orderId.slice(-4)} pas encore prête`);
+        return false;
       }
+      const best = findBestDriver(order, state.drivers || {});
+      if (!best) { addLog(`❌ Aucun livreur dispo pour #${orderId.slice(-4)}`); return false; }
 
-      // Always fetch fresh drivers from Firebase
-      _fbdb.ref('livreurs').once('value').then(snap => {
-        const rawDrivers = snap.val() || {};
-        const drivers = {};
-        Object.entries(rawDrivers).forEach(([id, d]) => { normalizeDriver(id, d); drivers[id] = d; });
-
-        const best = findBestDriver(order, drivers);
-        if (!best) { addLog(`❌ Aucun livreur dispo pour #${orderId}`); render(); return; }
-
-        const now = Date.now();
-        _fbdb.ref().update({
-          [`orders/${orderId}/assignedTo`]: best.id,
-          [`orders/${orderId}/assignedName`]: best.name,
-          [`orders/${orderId}/status`]: 'en-route',
-          [`orders/${orderId}/dispatchedAt`]: now,
-          [`livreurs/${best.id}/status`]: 'busy',
-          [`livreurs/${best.id}/activeOrders`]: (best.activeOrders || 0) + 1,
-          [`livreurs/${best.id}/currentOrder`]: orderId
-        });
-        addLog(`✅ #${orderId.slice(-4)} → ${best.name} | ${best._dist} km | score ${best._score}`);
-      });
+      const updates = {};
+      updates[`/orders/${orderId}/assignedTo`] = best.id;
+      updates[`/orders/${orderId}/assignedName`] = best.name;
+      updates[`/orders/${orderId}/status`] = 'attribue';
+      updates[`/orders/${orderId}/dispatchedAt`] = Date.now();
+      updates[`/drivers/${best.id}/status`] = 'busy';
+      updates[`/drivers/${best.id}/activeOrders`] = (best.activeOrders || 0) + 1;
+      updates[`/drivers/${best.id}/currentOrder`] = orderId;
+      rtdb.ref().update(updates);
+      addLog(`✅ #${orderId.slice(-4)} → ${best.name} | ${best._dist} km | score ${best._score}`);
       return true;
     }
 
     function forceDispatchAll() {
-      const ready = Object.keys(_cache.orders || {}).filter(id => _cache.orders[id].status === 'prete' && !_cache.orders[id].assignedTo);
+      const orders = state.orders || {};
+      const ready = Object.keys(orders).filter(id => orders[id].status === 'prete' && !orders[id].assignedTo);
       if (ready.length === 0) { alert('Aucune commande prête à dispatcher'); return; }
       ready.forEach(id => dispatchOrder(id));
     }
@@ -609,15 +545,15 @@
        RENDER
        ============================================================ */
     function render() {
-      const db = getDB();
-      const orders = db.orders || {};
-      const drivers = db.drivers || {};
-      const log = db.log || [];
+      const orders = state.orders || {};
+      const drivers = state.drivers || {};
+      const logObj = state.log || {};
+      const log = Object.values(logObj).sort((a, b) => (b.time || 0) - (a.time || 0));
 
       /* ---- STATS ---- */
       const all = Object.values(orders);
       document.getElementById('s-total').textContent = all.length;
-      document.getElementById('s-pending').textContent = all.filter(o => ['nouvelle', 'acceptee', 'prete'].includes(o.status)).length;
+      document.getElementById('s-pending').textContent = all.filter(o => ['nouvelle', 'acceptee', 'prete', 'attribue', 'declined'].includes(o.status)).length;
       document.getElementById('s-enroute').textContent = all.filter(o => o.status === 'en-route').length;
       document.getElementById('s-done').textContent = all.filter(o => o.status === 'livree').length;
       document.getElementById('s-drivers').textContent = Object.values(drivers).filter(d => d.status === 'available').length;
@@ -639,9 +575,11 @@
             'nouvelle': `<span class="badge badge-nouvelle">🔴 Nouvelle</span>`,
             'acceptee': `<span class="badge badge-acceptee">🟠 Cuisine</span>`,
             'prete': `<span class="badge badge-prete">🟡 Prête</span>`,
+            'attribue': `<span class="badge badge-en-route">📲 En attente livreur</span>`,
+            'declined': `<span class="badge" style="background:#1a0000;color:var(--red);">⛔ Refusée — redispatch…</span>`,
             'en-route': `<span class="badge badge-en-route">🔵 En route</span>`,
             'livree': `<span class="badge badge-livree">✅ Livrée</span>`
-          }[o.status] || `<span class="badge">${o.status}</span>`;
+          }[o.status] || `<span class="badge">${esc(o.status)}</span>`;
 
           return `
       <div class="order-row" style="${o.status === 'prete' && !o.assignedTo ? 'border-color:var(--yellow);' : ''}">
@@ -687,9 +625,9 @@
       if (log.length === 0) {
         logEl.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;font-size:.8rem;">Log vide</p>';
       } else {
-        logEl.innerHTML = log.map(l => `
+        logEl.innerHTML = log.slice(0, 80).map(l => `
       <div class="log-item">
-        <span class="log-time">${new Date(l.time).toLocaleTimeString('fr')}</span>${l.msg}
+        <span class="log-time">${new Date(l.time).toLocaleTimeString('fr')}</span>${esc(l.msg)}
       </div>`).join('');
       }
     }
@@ -698,11 +636,17 @@
        ACTIONS
        ============================================================ */
     function seedDemo() {
-      const db = getDB();
+      const existingDrivers = state.drivers && Object.keys(state.drivers).length > 0;
+      const drivers = existingDrivers ? state.drivers : SEED_DRIVERS;
       const clients = ['Koffi Mensah', 'Aicha Bamba', 'Chris Yao', 'Marie-Claire', 'Djibril Koné', 'Sandrine K.'];
       const zones = Object.keys(ZONES);
       const menus = ['Poulet braisé + Attiéké', 'Riz + Poisson braisé', 'Foutou + Sauce graine', 'Kedjenou + Riz', 'Poisson braisé + Alloco'];
       const prices = [3500, 2500, 2000, 3000, 4000];
+      const updates = {};
+
+      if (!existingDrivers) {
+        Object.entries(SEED_DRIVERS).forEach(([id, d]) => { updates[`/drivers/${id}`] = d; });
+      }
 
       for (let i = 0; i < 6; i++) {
         const id = 'cmd' + Date.now() + i;
@@ -711,72 +655,66 @@
         const menuIdx = Math.floor(Math.random() * menus.length);
         const statusOpts = ['nouvelle', 'nouvelle', 'acceptee', 'prete', 'prete', 'en-route'];
         const status = statusOpts[i % statusOpts.length];
-        db.orders[id] = {
-          client: clients[i % clients.length],
-          items: menus[menuIdx],
-          total: prices[menuIdx] + 500,
-          zone, lat: z.lat + (Math.random() * .01 - .005), lng: z.lng + (Math.random() * .01 - .005),
-          status,
-          restaurant: 'TropRapide',
-          restaurantLat: 5.340, restaurantLng: -4.010,
+        const order = {
+          client: clients[i % clients.length], items: menus[menuIdx],
+          total: prices[menuIdx] + 500, zone,
+          lat: z.lat + (Math.random() * .01 - .005), lng: z.lng + (Math.random() * .01 - .005),
+          status, restaurant: 'TropRapide', restaurantLat: 5.340, restaurantLng: -4.010,
           createdAt: Date.now() - Math.floor(Math.random() * 600000),
           assignedTo: null, assignedName: null
         };
         if (status === 'en-route') {
-          const driverIds = Object.keys(db.drivers);
-          const dId = driverIds[i % driverIds.length];
-          db.orders[id].assignedTo = dId;
-          db.orders[id].assignedName = db.drivers[dId].name;
-          db.orders[id].dispatchedAt = Date.now();
-          db.drivers[dId].status = 'busy';
-          db.drivers[dId].activeOrders = (db.drivers[dId].activeOrders || 0) + 1;
-          db.drivers[dId].currentOrder = id;
+          const dIds = Object.keys(drivers);
+          const dId = dIds[i % dIds.length];
+          order.assignedTo = dId;
+          order.assignedName = drivers[dId].name;
+          order.dispatchedAt = Date.now();
+          updates[`/drivers/${dId}/status`] = 'busy';
+          updates[`/drivers/${dId}/activeOrders`] = (drivers[dId].activeOrders || 0) + 1;
+          updates[`/drivers/${dId}/currentOrder`] = id;
         }
+        updates[`/orders/${id}`] = order;
       }
-      db.log.unshift({ time: Date.now(), msg: '🌱 Données de démo injectées' });
-      saveDB(db);
-      render();
-    }
-
-    function resetDriverStatuses() {
-      if (!confirm('Remettre tous les livreurs en "disponible" ?')) return;
-      const updates = {};
-      Object.entries(_cache.drivers || {}).forEach(([id, d]) => {
-        updates['livreurs/' + id + '/status'] = 'available';
-        updates['livreurs/' + id + '/activeOrders'] = 0;
-        updates['livreurs/' + id + '/currentOrder'] = null;
-      });
-      if (Object.keys(updates).length > 0) _fbdb.ref().update(updates);
-      addLog('🟢 Tous les livreurs remis disponibles');
+      rtdb.ref().update(updates);
+      addLog('🌱 Données de démo injectées');
     }
 
     function resetDB() {
-      if (!confirm('Supprimer toutes les commandes ? (Les livreurs ne seront pas supprimés)')) return;
-      _fbdb.ref('orders').remove();
-      _cache.orders = {};
-      _cache.log = [];
-      render();
-      addLog('🗑️ Commandes réinitialisées');
+      if (!confirm('Supprimer toutes les commandes et le log ?')) return;
+      rtdb.ref('/orders').remove();
+      rtdb.ref('/log').remove();
+      const driverIds = Object.keys(state.drivers || SEED_DRIVERS);
+      driverIds.forEach(id => {
+        rtdb.ref(`/drivers/${id}`).update({ status: 'available', activeOrders: 0, currentOrder: null });
+      });
     }
 
-    function clearLog() {
-      const db = getDB();
-      db.log = [];
-      saveDB(db);
-      render();
-    }
+    function clearLog() { rtdb.ref('/log').remove(); }
 
     /* ============================================================
-       AUTO-DISPATCH: écoute les commandes "prête" non assignées
+       AUTO-DISPATCH: surveille commandes "prête" non assignées
        ============================================================ */
     let _lastPrete = new Set();
     function autoDispatchWatcher() {
-      const db = getDB();
-      const pretes = Object.keys(db.orders).filter(id => db.orders[id].status === 'prete' && !db.orders[id].assignedTo);
-      pretes.forEach(id => {
+      const orders = state.orders || {};
+      const toDispatch = Object.keys(orders).filter(id => {
+        const o = orders[id];
+        return (o.status === 'prete' || o.status === 'declined') && !o.assignedTo;
+      });
+      toDispatch.forEach(id => {
         if (!_lastPrete.has(id)) {
           _lastPrete.add(id);
-          setTimeout(() => { dispatchOrder(id); _lastPrete.delete(id); }, 500);
+          setTimeout(() => {
+            const o2 = (state.orders || {})[id];
+            const best = o2 ? findBestDriver(o2, state.drivers || {}) : null;
+            if (best) {
+              dispatchOrder(id);
+            } else if (o2 && o2.status === 'declined') {
+              rtdb.ref(`/orders/${id}`).update({ status: 'prete', declinedBy: null });
+              addLog(`⚠️ Aucun livreur dispo pour #${id.slice(-4)} — remis en file`);
+            }
+            _lastPrete.delete(id);
+          }, 800);
         }
       });
     }
@@ -784,10 +722,8 @@
     /* ============================================================
        INIT
        ============================================================ */
-    // Clock
     setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('fr'); }, 1000);
 
-    /* ── BIP SONORE ── */
     let _knownOrderIds = new Set();
     function playBeep() {
       try {
@@ -804,48 +740,22 @@
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
       } catch (e) { }
     }
-    function checkNewOrders() {
-      const orders = _cache.orders || {};
-      let hasNew = false;
-      Object.keys(orders).forEach(id => {
-        if (!_knownOrderIds.has(id)) hasNew = true;
-        _knownOrderIds.add(id);
-      });
-      if (hasNew) playBeep();
-    }
 
-    /* ── FIREBASE LISTENERS (remplace localStorage + polling) ── */
-    let _firstOrderLoad = true;
+    /* Firebase real-time listener — replaces localStorage + storage events + polling */
+    let _initialLoad = true;
+    rtdb.ref('/').on('value', snap => {
+      state = snap.val() || { orders: {}, drivers: {}, log: {}, revenue: 0 };
 
-    _fbdb.ref('orders').on('value', snap => {
-      const orders = snap.val() || {};
-      Object.keys(orders).forEach(id => normalizeOrder(id, orders[id]));
-      _cache.orders = orders;
-      if (_firstOrderLoad) {
-        Object.keys(orders).forEach(id => _knownOrderIds.add(id));
-        _firstOrderLoad = false;
-        render();
-      } else {
-        checkNewOrders();
-        autoDispatchWatcher();
-        render();
+      const currentIds = Object.keys(state.orders || {});
+      if (!_initialLoad) {
+        let hasNew = false;
+        currentIds.forEach(id => { if (!_knownOrderIds.has(id)) { hasNew = true; } });
+        if (hasNew) playBeep();
       }
-    });
+      currentIds.forEach(id => _knownOrderIds.add(id));
+      _initialLoad = false;
 
-    _fbdb.ref('livreurs').on('value', snap => {
-      const rawDrivers = snap.val();
-      if (rawDrivers && Object.keys(rawDrivers).length > 0) {
-        const normalized = {};
-        const updates = {};
-        Object.entries(rawDrivers).forEach(([id, d]) => {
-          const before = JSON.stringify(d);
-          normalizeDriver(id, d);
-          if (JSON.stringify(d) !== before) updates['livreurs/' + id] = d;
-          normalized[id] = d;
-        });
-        _cache.drivers = normalized;
-        if (Object.keys(updates).length > 0) _fbdb.ref().update(updates);
-      }
+      autoDispatchWatcher();
       render();
     });
   </script>
